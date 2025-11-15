@@ -1,3 +1,4 @@
+## Análisis de mejoras (a considerar) por CODEX
 **State Check**
 
 - Config, timeout, cache and SWR plumbing are already consistent across runtimes: see go-service/config.yaml, node-service/config.yaml, and dotnet-service/src/appsettings.json. Each service loads those YAML/JSON specs (go-service/internal/config/config.go, node-service/internal/config/env.js, dotnet-service/src/Internal/Config/AppConfig.cs) and threads the timeouts through controllers (go-service/internal/interface/http/product_controller.go, node-service/internal/interface/http/productController.js, dotnet-service/src/Internal/Interface/Http/ProductHttpHandler.cs), so HTTP/DB deadlines and cache TTLs are configurable instead of hardcoded.

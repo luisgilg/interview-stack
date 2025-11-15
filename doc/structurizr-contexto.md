@@ -1,4 +1,4 @@
-Contexto Representa a los actores y sistemas externos definidos por la orquestación (docker-compose.yml (lines 1-182)) y la capa de observabilidad (observability/prometheus.yml (lines 1-17), observability/grafana-datasources.yml (lines 1-7)).
+Contexto Representa a los actores y sistemas externos definidos por la orquestación
 
 ```mermaid
 graph LR

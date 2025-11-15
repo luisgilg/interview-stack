@@ -1,4 +1,4 @@
-Componentes (Go) Profundiza en la porción Go: el router Fiber y el controlador (go-service/internal/interface/http/product_controller.go (lines 18-154)) invocan los casos de uso y coordinan caché y write-behind que se configuran al arrancar (go-service/cmd/http/main.go (lines 121-187)).
+Componentes (Go) Profundiza en la porción Go: el router Fiber y el controlador invocan los casos de uso y coordinan caché y write-behind que se configuran al arrancar.
 
 ```mermaid
 graph LR

@@ -1,4 +1,4 @@
-Contenedores Desglosa la plataforma en edge, servicios, datos y observabilidad según el router (nginx/nginx.conf (lines 17-74)), los bootsraps de cada servicio (go-service/cmd/http/main.go (lines 62-190), node-service/cmd/http/server.js (lines 1-152), dotnet-service/src/cmd/Http/Program.cs (lines 22-177)) y los recursos declarados en Compose.
+Contenedores Desglosa la plataforma en edge, servicios, datos y observabilidad según el router, los bootsraps de cada servicio y los recursos declarados en Compose.
 
 ```mermaid
 graph LR

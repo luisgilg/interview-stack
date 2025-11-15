@@ -1,4 +1,4 @@
-Flujo POST /products (Nivel 4) El diagrama dinámico resume la ruta de escritura, el cacheWriter y el trabajador Redis descritos en go-service/internal/application/usecase/create_product.go (lines 24-74), go-service/internal/infrastructure/queue/worker.go (lines 22-199) y activados desde go-service/cmd/http/main.go (lines 121-187). El mismo patrón se replica en Node y .NET (node-service/cmd/http/server.js (lines 79-152), dotnet-service/src/cmd/Http/Program.cs (lines 79-177)).
+Flujo POST /products (Nivel 4) El diagrama dinámico resume la ruta de escritura, el cacheWriter y el worker Redis. El mismo patrón se replica en Node y .NET.
 
 ```mermaid
 graph LR
