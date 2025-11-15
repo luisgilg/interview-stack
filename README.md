@@ -169,4 +169,29 @@ Log in to Grafana at `http://localhost:3000/d/interview-observability/interview-
 - Logs are JSON-friendly across services; adjust `LOG_LEVEL` (Node) or change handlers as needed.
 - Update the schema for the store you selected (SQL or Mongo). Since the APIs no longer mirror writes to both stores, switch types only after you have applied the equivalent migrations in each backend.
 
+## Unit Test Notes
+
+### Overview
+Cada servicio mantiene pruebas unitarias enfocadas en los casos de uso y adaptadores críticos, aislando sus dependencias externas con mocks para evitar llamadas reales a Postgres, Mongo, Redis o HTTP. Los Go tests viven junto al código (`internal/.../*_test.go`), el runtime Node usa `__tests__`/`__mocks__` en la raíz del servicio, y .NET separa un proyecto `dotnet-service/Tests` que referencia la app principal; esta convención mantiene comandos y estructuras homogéneas en todo el monorepo.
+
+### Testing Stack by Runtime
+#### Go
+- `go test` más `stretchr/testify` (`require`, `mock`) verifican los `usecase` y `repository` bajo `go-service/internal`, incluidos escenarios de cache/write-behind simulados con `clock.FakeClock` y stubs de colas.
+- Los mocks se generan con `mockery` (ver `internal/mocks/*`) para interfaces como `ProductStore` y `Clock`, por lo que las pruebas validan validaciones y transformaciones de dominio pero no cubren conexiones reales a bases de datos o wiring HTTP.
+
+#### Node.js
+- Jest ejecuta suites organizadas por capa (`__tests__/application`, `__tests__/controllers`, `__tests__/repositories`) y usa `supertest` para asegurar que los controladores Express traduzcan correctamente payloads y códigos de estado.
+- Las dependencias se suplantan mediante los manual mocks en `node-service/__mocks__` (Clock, ProductStore), de modo que se cubren flujos de caché, colas y validaciones, pero no se levantan servidores completos ni se prueban drivers reales de PostgreSQL/Mongo/Redis.
+
+#### .NET
+- El proyecto `DotnetService.Tests.csproj` ejecuta xUnit con `dotnet test`, apoyándose en `Moq` para repos, colas, loggers y clocks; `coverlet.collector` viene listo para emitir métricas de cobertura cuando se solicita.
+- Las pruebas abarcan los UseCases, `CacheService`, `ProductRepository` y helpers de reloj en `dotnet-service/Tests/*.cs`, usando `NoopCacheClient` y mocks estrictos, por lo que no cubren controladores HTTP ni ejecuciones contra infraestructura real.
+
+### How to Run Tests
+```bash
+cd go-service && go test ./...
+cd node-service && npm test
+cd dotnet-service && dotnet test Tests/DotnetService.Tests.csproj
+```
+
 Enjoy building your interview stack!
