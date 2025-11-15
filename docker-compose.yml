@@ -1,0 +1,192 @@
+services:
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - interview
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: productsdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - interview
+
+  mongo:
+    image: mongo:7.0
+    command:
+      - mongod
+      - --quiet
+      - --setParameter
+      - logComponentVerbosity={network:0}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - interview
+
+  go-service:
+    build:
+      context: ./go-service
+    environment:
+      GO_SERVICE_PORT: 8081
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: productsdb
+      MONGO_URI: mongodb://mongo:27017
+      MONGO_DATABASE: productsdb
+      MONGO_COLLECTION: products
+      MONGO_HOST: mongo
+      MONGO_PORT: 27017
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
+    networks:
+      - interview
+
+  node-service:
+    build:
+      context: ./node-service
+    environment:
+      NODE_SERVICE_PORT: 8082
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: productsdb
+      MONGO_URI: mongodb://mongo:27017
+      MONGO_DATABASE: productsdb
+      MONGO_COLLECTION: products
+      MONGO_HOST: mongo
+      MONGO_PORT: 27017
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    ports:
+      - "8082:8082"
+    networks:
+      - interview
+
+  dotnet-service:
+    build:
+      context: ./dotnet-service
+    environment:
+      DOTNET_SERVICE_PORT: 8083
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: productsdb
+      MONGO_URI: mongodb://mongo:27017
+      MONGO_DATABASE: productsdb
+      MONGO_COLLECTION: products
+      MONGO_HOST: mongo
+      MONGO_PORT: 27017
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    ports:
+      - "8083:8083"
+    networks:
+      - interview
+
+  nginx:
+    build: ./nginx
+    ports:
+      - "8080:8080"
+    depends_on:
+      - go-service
+      - node-service
+      - dotnet-service
+    restart: always
+    networks:
+      - interview
+
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - go-service
+      - node-service
+      - dotnet-service
+    networks:
+      - interview
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./observability/grafana-dashboard.json:/var/lib/grafana/dashboards/interview-stack.json:ro
+      - ./observability/grafana-dashboards.yml:/etc/grafana/provisioning/dashboards/interview.yml:ro
+      - ./observability/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasource.yml:ro
+    depends_on:
+      - prometheus
+    networks:
+      - interview
+
+volumes:
+  postgres_data:
+  mongo_data:
+  redis_data:
+  grafana_data:
+
+networks:
+  interview:
+    driver: bridge

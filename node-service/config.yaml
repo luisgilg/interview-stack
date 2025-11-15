@@ -1,0 +1,47 @@
+server:
+  port: 8082
+  readTimeout: 5s
+  writeTimeout: 5s
+  idleTimeout: 120s
+  shutdownTimeout: 5s
+  requestTimeouts:
+    read: 2s
+    write: 5s
+    health: 2s
+
+database:
+  type: sql
+  postgres:
+    host: postgres
+    port: 5432
+    user: postgres
+    password: postgres
+    db: productsdb
+    connectTimeout: 5s
+  mongo:
+    uri: mongodb://mongo:27017
+    database: productsdb
+    collection: products
+    connectTimeout: 10s
+    operationTimeout: 5s
+
+cache:
+  enabled: true
+  defaultTTL: 30s
+  staleTTL: 60s
+  redis:
+    host: redis
+    port: 6379
+    password: ""
+    db: 0
+
+writeBehind:
+  enabled: true
+  batchSize: 50
+  flushInterval: 1s
+  streamName: products_write_queue
+
+metrics:
+  enabled: true
+  port: 8082
+  path: /metrics
