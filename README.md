@@ -118,12 +118,12 @@ The Docker Compose setup keeps the default `sql` option for all services, but yo
 
 ### C4 Diagrams
 
-Detailed C4 views live under `diagrams/` and embed Mermaid source so you can paste them into any renderer:
+Detailed C4 views live under `doc/` and embed Mermaid source so you can paste them into any renderer:
 
-- [Contexto](diagrams/structurizr-contexto.md)
-- [Contenedores](diagrams/structurizr-contenedores.md)
-- [Componentes Go](diagrams/structurizr-componentes_go.md)
-- [Flujo POST /products](diagrams/structurizr-post_products.md)
+- [Contexto](doc/structurizr-contexto.md)
+- [Contenedores](doc/structurizr-contenedores.md)
+- [Componentes Go](doc/structurizr-componentes_go.md)
+- [Flujo POST /products](doc/structurizr-post_products.md)
 
 ### SQL Schema
 
