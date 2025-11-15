@@ -193,5 +193,3 @@ cd go-service && go test ./...
 cd node-service && npm test
 cd dotnet-service && dotnet test Tests/DotnetService.Tests.csproj
 ```
-
-Enjoy building your interview stack!
