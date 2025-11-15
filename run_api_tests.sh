@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# This script now supports proxy mode (default) using the NGINX reverse proxy at port 8080.
+# Use `./run_api_tests.sh direct` to bypass the proxy and hit services individually.
 
 set -u -o pipefail
 
@@ -11,10 +13,18 @@ TEST_PRODUCT_NAME="Test Product"
 TEST_PRODUCT_PRICE="123.45"
 UPDATED_PRODUCT_PRICE="543.21"
 
+DEFAULT_MODE="proxy"
+MODE="$DEFAULT_MODE"
+TARGET="all"
+
+BASE_GO_URL=""
+BASE_NODE_URL=""
+BASE_DOTNET_URL=""
+
 SERVICES=(
-  "go|Go service|http://localhost:8081"
-  "node|Node service|http://localhost:8082"
-  "dotnet|.NET service|http://localhost:8083"
+  "go|Go service"
+  "node|Node service"
+  "dotnet|.NET service"
 )
 
 JQ_AVAILABLE=0
@@ -41,9 +51,117 @@ function print_info() {
 
 function usage() {
   cat <<'USAGE'
-Usage: ./run_api_tests.sh [go|node|dotnet|all]
-Default target is "all".
+Usage: ./run_api_tests.sh [proxy|direct] [go|node|dotnet|all]
+  Mode:   proxy (default) hits services via NGINX, direct bypasses the proxy.
+  Target: defaults to "all". You can still run a single service (go|node|dotnet).
+Examples:
+  ./run_api_tests.sh                # proxy mode, all services
+  ./run_api_tests.sh direct go      # direct mode, Go service only
+  ./run_api_tests.sh node           # proxy mode, Node service only
 USAGE
+}
+
+function parse_arguments() {
+  MODE="$DEFAULT_MODE"
+  TARGET="all"
+  local mode_set=0
+  local target_set=0
+
+  local arg
+  for arg in "$@"; do
+    local normalized
+    normalized=$(printf '%s' "$arg" | tr '[:upper:]' '[:lower:]')
+    case "$normalized" in
+      proxy|direct)
+        if (( mode_set )); then
+          usage
+          exit 1
+        fi
+        MODE="$normalized"
+        mode_set=1
+        ;;
+      go|node|dotnet|all)
+        if (( target_set )); then
+          usage
+          exit 1
+        fi
+        TARGET="$normalized"
+        target_set=1
+        ;;
+      *)
+        usage
+        exit 1
+        ;;
+    esac
+  done
+}
+
+function configure_base_urls() {
+  if [[ "$MODE" == "proxy" ]]; then
+    BASE_GO_URL="http://localhost:8080/go"
+    BASE_NODE_URL="http://localhost:8080/node"
+    BASE_DOTNET_URL="http://localhost:8080/dotnet"
+  else
+    BASE_GO_URL="http://localhost:8081"
+    BASE_NODE_URL="http://localhost:8082"
+    BASE_DOTNET_URL="http://localhost:8083"
+  fi
+
+}
+
+function service_base_url() {
+  local key=$1
+  case "$key" in
+    go)
+      printf '%s' "$BASE_GO_URL"
+      ;;
+    node)
+      printf '%s' "$BASE_NODE_URL"
+      ;;
+    dotnet)
+      printf '%s' "$BASE_DOTNET_URL"
+      ;;
+    *)
+      printf ''
+      ;;
+  esac
+}
+
+function print_routing_info() {
+  local mode_upper
+  mode_upper=$(printf '%s' "$MODE" | tr '[:lower:]' '[:upper:]')
+  if [[ "$MODE" == "proxy" ]]; then
+    echo "Running tests in ${mode_upper} mode (NGINX @ :8080)"
+  else
+    echo "Running tests in ${mode_upper} mode (direct service ports)"
+  fi
+  echo "Routing:"
+  echo "  Go   -> ${BASE_GO_URL}"
+  echo "  Node -> ${BASE_NODE_URL}"
+  echo "  .NET -> ${BASE_DOTNET_URL}"
+}
+
+function ensure_proxy_health() {
+  if [[ "$MODE" != "proxy" ]]; then
+    return 0
+  fi
+
+  local proxy_health_url="http://localhost:8080/health"
+  print_info "Validating NGINX proxy health (${proxy_health_url})"
+
+  local raw
+  if ! raw=$(curl -s -S "$proxy_health_url" -w "HTTPSTATUS:%{http_code}"); then
+    print_fail "curl ${proxy_health_url} failed"
+    return 1
+  fi
+  local status="${raw##*HTTPSTATUS:}"
+  if [[ "$status" == "200" ]]; then
+    print_ok "NGINX proxy responded with 200"
+    return 0
+  fi
+
+  print_fail "NGINX proxy health check expected 200 but got ${status}"
+  return 1
 }
 
 function http_request() {
@@ -425,34 +543,37 @@ function select_services() {
   SELECTED_SERVICES=()
   local entry
   for entry in "${SERVICES[@]}"; do
-    IFS='|' read -r key name url <<<"$entry"
+    IFS='|' read -r key name <<<"$entry"
     if [[ "$target" == "all" || "$target" == "$key" ]]; then
-      SELECTED_SERVICES+=("$entry")
+      local base_url
+      base_url=$(service_base_url "$key")
+      if [[ -z "$base_url" ]]; then
+        print_fail "Base URL for ${name} (${key}) is not configured"
+        exit 1
+      fi
+      SELECTED_SERVICES+=("${key}|${name}|${base_url}")
     fi
   done
 }
 
 function main() {
-  local target="${1:-all}"
-  target=$(printf '%s' "$target" | tr '[:upper:]' '[:lower:]')
-
-  case "$target" in
-    go|node|dotnet|all)
-      ;;
-    *)
-      usage
-      exit 1
-      ;;
-  esac
+  parse_arguments "$@"
 
   if [[ $JQ_AVAILABLE -eq 0 ]]; then
     print_info "jq not found - falling back to text-based JSON checks"
   fi
 
-  select_services "$target"
+  configure_base_urls
+  print_routing_info
+
+  if ! ensure_proxy_health; then
+    exit 1
+  fi
+
+  select_services "$TARGET"
 
   if [[ "${#SELECTED_SERVICES[@]}" -eq 0 ]]; then
-    print_fail "No services matched target '${target}'"
+    print_fail "No services matched target '${TARGET}'"
     exit 1
   fi
 
