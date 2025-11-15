@@ -1,0 +1,199 @@
+############################
+# GLOBAL / EDITOR
+############################
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Logs & temp files
+*.log
+*.tmp
+*.temp
+*.swp
+*.swo
+*.pid
+*.seed
+*.bak
+
+# IDE junk
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# System files
+Thumbs.db
+ehthumbs.db
+$RECYCLE.BIN/
+
+############################
+# GIT
+############################
+.gitmodules
+
+############################
+# NODE.JS
+############################
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+out/
+coverage/
+.next/
+.nuxt/
+.npm/
+.pnp/
+.pnp.js
+
+# Bun
+.bun/
+
+# Typescript
+*.tsbuildinfo
+
+# Env files
+.env
+.env.*
+
+
+############################
+# GO (Golang)
+############################
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go build artifact
+*.test
+*.out
+
+# Go workspace/module caches
+bin/
+vendor/
+go.work.sum
+
+# Auto-generated
+*.prof
+*.pprof
+*.cov
+profile.out
+
+.cache/
+.gocache/
+
+############################
+# .NET / C# / ASP.NET
+############################
+
+# Build directories
+bin/
+obj/
+out/
+Debug/
+Release/
+publish/
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+.nuget/
+project.lock.json
+project.fragment.lock.json
+
+# User-specific
+*.user
+*.rsuser
+*.userprefs
+
+# Rider / JetBrains
+.idea/
+*.sln.iml
+
+# ASP.NET specific
+App_Data/
+*.dbmdl
+*.jfm
+Generated_Code/
+
+# Entity Framework
+*.mdf
+*.ldf
+
+# Dotnet Secrets
+secrets.json
+
+############################
+# DOCKER
+############################
+docker-data/
+docker-compose.override.yml
+
+############################
+# TESTS / COVERAGE
+############################
+coverage/
+*.lcov
+*.coverage
+*.coveragexml
+*.cover
+*.gcda
+*.gcno
+*.gcov
+
+############################
+# MONOREPO SPECIFIC
+############################
+# Turborepo cache
+.turbo/
+
+# Nx cache
+.nx/
+
+# Rush.js
+common/temp/
+
+# Yarn / PNPM / NPM
+.yarn/*
+!.yarn/patches
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions
+.pnpm-store/
+
+# Temporary monorepo output
+**/tmp/
+**/logs/
+
+############################
+# ENV & SECRETS
+############################
+.env
+.env.*
+*.key
+*.crt
+*.pem
+certs/
+
+############################
+# MISC
+############################
+*.iml
+*.orig
+*.rej
+*.patch
